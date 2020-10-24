@@ -34,6 +34,22 @@ window.onload = function init() {
     alert("WebGL isn't available");
   }
 
+  document
+    .getElementById("fileInput")
+    .addEventListener("change", function selectedFileChanged() {
+      if (this.files.length === 0) {
+        console.log("No file selected.");
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = function fileReadCompleted() {
+        // when the reader is done, the content is in reader.result.
+        console.log(reader.result);
+      };
+      reader.readAsText(this.files[0]);
+    });
+
   var iterationDiv = document.getElementById("iterationText");
 
   var slider = document.getElementById("interationSlider");
@@ -60,11 +76,9 @@ window.onload = function init() {
   drawButton.addEventListener("click", function () {
     snowflake(vertices, iterationCount);
 
-    bufferId = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, bufferId);
     gl.bufferData(gl.ARRAY_BUFFER, flatten(points), gl.STATIC_DRAW);
 
-    vPosition = gl.getAttribLocation(program, "vPosition");
     gl.vertexAttribPointer(vPosition, 2, gl.FLOAT, false, 0, 0);
     gl.enableVertexAttribArray(vPosition);
 
@@ -79,7 +93,6 @@ window.onload = function init() {
     gl.bindBuffer(gl.ARRAY_BUFFER, bufferId);
     gl.bufferData(gl.ARRAY_BUFFER, flatten(points), gl.STATIC_DRAW);
 
-    vPosition = gl.getAttribLocation(program, "vPosition");
     gl.vertexAttribPointer(vPosition, 2, gl.FLOAT, false, 0, 0);
     gl.enableVertexAttribArray(vPosition);
 
