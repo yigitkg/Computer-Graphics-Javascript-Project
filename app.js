@@ -16,40 +16,10 @@ var colors = [
   vec4(0.0, 1.0, 1.0, 1.0), // cyan
 ];
 
+var bgColor = vec4(0.8, 0.8, 0.8, 1.0);
+
 window.onload = function init() {
   canvas = document.getElementById("gl-canvas");
-  gl = WebGLUtils.setupWebGL(canvas);
-  if (!gl) {
-    alert("WebGL isn't available");
-  }
-
-  var m = document.getElementById("colorMenu");
-
-  m.addEventListener("click", function () {
-    cindex = m.selectedIndex;
-    console.log(colors[cindex]);
-  });
-
-  var button = document.getElementById("drawButton");
-  button.addEventListener("click", function () {
-    snowflake(vertices, iterationCount);
-
-    var program = initShaders(gl, "vertex-shader", "fragment-shader");
-    gl.useProgram(program);
-
-    var bufferId = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, bufferId);
-    gl.bufferData(gl.ARRAY_BUFFER, flatten(points), gl.STATIC_DRAW);
-
-    var vPosition = gl.getAttribLocation(program, "vPosition");
-    gl.vertexAttribPointer(vPosition, 2, gl.FLOAT, false, 0, 0);
-    gl.enableVertexAttribArray(vPosition);
-    render();
-  });
-
-  gl.viewport(0, 0, canvas.width, canvas.height);
-  gl.clearColor(0.8, 0.8, 0.8, 1.0);
-  gl.clear(gl.COLOR_BUFFER_BIT);
 
   canvas.addEventListener("mousedown", function (event) {
     t = vec2(
@@ -57,9 +27,80 @@ window.onload = function init() {
       (2 * (canvas.height - event.clientY)) / canvas.height - 1
     );
     vertices.push(t);
-    console.log(`vector added ${t}`);
-    console.dir(`array ${vertices}`);
   });
+
+  gl = WebGLUtils.setupWebGL(canvas);
+  if (!gl) {
+    alert("WebGL isn't available");
+  }
+
+  var iterationDiv = document.getElementById("iterationText");
+
+  var slider = document.getElementById("interationSlider");
+
+  slider.oninput = function () {
+    iterationCount = this.value;
+    iterationDiv.innerText = "Iteration: " + iterationCount;
+  };
+
+  var m = document.getElementById("colorMenu");
+
+  m.addEventListener("click", function () {
+    cindex = m.selectedIndex;
+    bgColor = colors[cindex];
+
+    gl.clearColor(bgColor[0], bgColor[1], bgColor[2], bgColor[3]);
+    gl.clear(gl.COLOR_BUFFER_BIT);
+
+    render();
+  });
+
+  var drawButton = document.getElementById("drawButton");
+
+  drawButton.addEventListener("click", function () {
+    snowflake(vertices, iterationCount);
+
+    bufferId = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, bufferId);
+    gl.bufferData(gl.ARRAY_BUFFER, flatten(points), gl.STATIC_DRAW);
+
+    vPosition = gl.getAttribLocation(program, "vPosition");
+    gl.vertexAttribPointer(vPosition, 2, gl.FLOAT, false, 0, 0);
+    gl.enableVertexAttribArray(vPosition);
+
+    render();
+  });
+
+  var clearButton = document.getElementById("clearButton");
+  clearButton.addEventListener("click", function () {
+    points = [];
+    vertices = [];
+
+    gl.bindBuffer(gl.ARRAY_BUFFER, bufferId);
+    gl.bufferData(gl.ARRAY_BUFFER, flatten(points), gl.STATIC_DRAW);
+
+    vPosition = gl.getAttribLocation(program, "vPosition");
+    gl.vertexAttribPointer(vPosition, 2, gl.FLOAT, false, 0, 0);
+    gl.enableVertexAttribArray(vPosition);
+
+    render();
+  });
+
+  gl.viewport(0, 0, canvas.width, canvas.height);
+
+  gl.clearColor(bgColor[0], bgColor[1], bgColor[2], bgColor[3]);
+  gl.clear(gl.COLOR_BUFFER_BIT);
+
+  var program = initShaders(gl, "vertex-shader", "fragment-shader");
+  gl.useProgram(program);
+
+  var bufferId = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, bufferId);
+  gl.bufferData(gl.ARRAY_BUFFER, flatten(points), gl.STATIC_DRAW);
+
+  var vPosition = gl.getAttribLocation(program, "vPosition");
+  gl.vertexAttribPointer(vPosition, 2, gl.FLOAT, false, 0, 0);
+  gl.enableVertexAttribArray(vPosition);
 };
 function snowflake(vertArray, count) {
   let index = 0;
@@ -125,27 +166,10 @@ function calculatePoint(left, right, isInner = false) {
   return f;
 }
 
-function calculatePoints(left, righ) {
-  var c, cd, d, de, e, eb;
-}
-
-function hypot(a, b) {
-  var x = Math.sqrt(a[0] - b[0]);
-  var y = Math.sqrt(a[1] - b[2]);
-  var v = vec2(x, y);
-  return v;
-}
-//this function is to draw a line with 5 points
 function drawLine(array) {
   for (let index = 0; index < array.length - 1; index++) {
     points.push(array[index], array[index + 1]);
   }
-}
-//draw trangle, I didn't call it in main function
-function triangle(a, b, c) {
-  points.push(a, b);
-  points.push(b, c);
-  points.push(c, a);
 }
 
 function render() {
