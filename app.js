@@ -38,14 +38,40 @@ window.onload = function init() {
     .getElementById("fileInput")
     .addEventListener("change", function selectedFileChanged() {
       if (this.files.length === 0) {
-        console.log("No file selected.");
         return;
       }
-
       const reader = new FileReader();
       reader.onload = function fileReadCompleted() {
-        // when the reader is done, the content is in reader.result.
-        console.log(reader.result);
+        // start parsing the file
+        const lines = reader.result.split("\n");
+        const verticesAsText = lines[0].split("vertices=")[1];
+        const iterationCount = lines[1].split("iteration=")[1];
+
+        // update slider and text info
+        iterationDiv.innerText = "Iteration: " + iterationCount;
+        slider.setAttribute("value", iterationCount);
+
+        // set vertices
+        vertices = [];
+        const verticesAsStrings = verticesAsText.split("/");
+        verticesAsStrings.forEach((element) => {
+          vertices.push(
+            vec2(
+              parseFloat(element.split(",")[0]),
+              parseFloat(element.split(",")[1])
+            )
+          );
+        });
+
+        generateFractal(vertices, iterationCount);
+        gl.bindBuffer(gl.ARRAY_BUFFER, bufferId);
+        gl.bufferData(gl.ARRAY_BUFFER, flatten(points), gl.STATIC_DRAW);
+
+        gl.vertexAttribPointer(vPosition, 2, gl.FLOAT, false, 0, 0);
+        gl.enableVertexAttribArray(vPosition);
+
+        render();
+        points = [];
       };
       reader.readAsText(this.files[0]);
     });
@@ -74,7 +100,11 @@ window.onload = function init() {
   var drawButton = document.getElementById("drawButton");
 
   drawButton.addEventListener("click", function () {
-    snowflake(vertices, iterationCount);
+    if (iterationCount == 0) {
+      drawLine(vertices);
+    } else {
+      generateFractal(vertices, iterationCount);
+    }
 
     gl.bindBuffer(gl.ARRAY_BUFFER, bufferId);
     gl.bufferData(gl.ARRAY_BUFFER, flatten(points), gl.STATIC_DRAW);
@@ -83,6 +113,7 @@ window.onload = function init() {
     gl.enableVertexAttribArray(vPosition);
 
     render();
+    points = [];
   });
 
   var clearButton = document.getElementById("clearButton");
@@ -115,17 +146,18 @@ window.onload = function init() {
   gl.vertexAttribPointer(vPosition, 2, gl.FLOAT, false, 0, 0);
   gl.enableVertexAttribArray(vPosition);
 };
-function snowflake(vertArray, count) {
-  let index = 0;
-  for (index; index < vertArray.length; index++) {
-    divideLine(
+
+// run divide segments per iteration amount
+function generateFractal(vertArray, count) {
+  for (let index; index < vertArray.length; index++) {
+    divideSegments(
       vertArray[index],
       vertArray[(index + 1) % vertArray.length],
       count
     );
   }
 }
-function divideLine(a, I, count) {
+function divideSegments(a, I, count) {
   if (count === 0) {
     var b = mix(a, I, 1 / 4);
     var h = mix(a, I, 3 / 4);
@@ -145,35 +177,36 @@ function divideLine(a, I, count) {
     var d = calculatePoint(e, h, true);
     var f = calculatePoint(e, b, true);
     count--;
-    divideLine(a, b, count);
-    divideLine(b, c, count);
-    divideLine(c, d, count);
-    divideLine(d, e, count);
-    divideLine(e, f, count);
-    divideLine(f, g, count);
-    divideLine(g, h, count);
-    divideLine(h, I, count);
+    divideSegments(a, b, count);
+    divideSegments(b, c, count);
+    divideSegments(c, d, count);
+    divideSegments(d, e, count);
+    divideSegments(e, f, count);
+    divideSegments(f, g, count);
+    divideSegments(g, h, count);
+    divideSegments(h, I, count);
   }
 }
 
+// calculate the poin which is 90 degrees proportioned to the left and right points
 function calculatePoint(left, right, isInner = false) {
-  var angleInDegrees = 90;
-  var angleInRadians = (angleInDegrees * Math.PI) / 180;
-  var s1 = Math.sin(angleInRadians);
-  var c1 = Math.cos(angleInRadians);
+  var radianAngle = (90 * Math.PI) / 180;
+  var sin = Math.sin(radianAngle);
+  var cos = Math.cos(radianAngle);
+
   if (!isInner) {
     var x1 =
-      ((right[0] - left[0]) / 2) * c1 -
-      ((right[1] - left[1]) / 2) * s1 +
+      ((right[0] - left[0]) / 2) * cos -
+      ((right[1] - left[1]) / 2) * sin +
       left[0];
     var y1 =
-      ((right[0] - left[0]) / 2) * s1 +
-      ((right[1] - left[1]) / 2) * c1 +
+      ((right[0] - left[0]) / 2) * sin +
+      ((right[1] - left[1]) / 2) * cos +
       left[1];
     var f = vec2(x1, y1);
   } else {
-    var x1 = (right[0] - left[0]) * c1 - (right[1] - left[1]) * s1 + left[0];
-    var y1 = (right[0] - left[0]) * s1 + (right[1] - left[1]) * c1 + left[1];
+    var x1 = (right[0] - left[0]) * cos - (right[1] - left[1]) * sin + left[0];
+    var y1 = (right[0] - left[0]) * sin + (right[1] - left[1]) * cos + left[1];
     var f = vec2(x1, y1);
   }
   return f;
@@ -187,5 +220,5 @@ function drawLine(array) {
 
 function render() {
   gl.clear(gl.COLOR_BUFFER_BIT);
-  gl.drawArrays(gl.LINES, 0, points.length);
+  gl.drawArrays(gl.LINE_LOOP, 0, points.length);
 }

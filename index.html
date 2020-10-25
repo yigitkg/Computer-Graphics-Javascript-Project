@@ -44,15 +44,15 @@
 
   <body>
     <div>
-      <div id="iterationText">Iteration: 1</div>
-      <input
+      <div id="iterationText">Iteration: 0</div>
+      0<input
         type="range"
-        min="1"
+        min="0"
         max="6"
         value="1"
         class="slider"
         id="interationSlider"
-      />
+      />6
       <br />
 
       <input type="file" id="fileInput" />
@@ -61,6 +61,7 @@
         Oops ... your browser doesn't support the HTML5 canvas element </canvas
       ><br />
       Select Background Color
+      <br />
       <select id="colorMenu" size="7">
         <option value="0">Black</option>
         <option value="1">Red</option>
@@ -72,6 +73,7 @@
       </select>
       <br />
       <button id="drawButton">Draw Fractal</button>
+
       <button id="clearButton">Clear Fractal</button>
     </div>
   </body>
